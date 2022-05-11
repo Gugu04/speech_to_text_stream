@@ -1,4 +1,6 @@
 // https://pub.dev/packages/avatar_glow
+// ignore_for_file: prefer_final_fields
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -58,6 +60,7 @@ class _AvatarGlowState extends State<AvatarGlow>
     end: 0.0,
   ).animate(controller);
 
+  // ignore: prefer_function_declarations_over_variables
   late void Function(AnimationStatus status) _statusListener = (_) async {
     if (controller.status == AnimationStatus.completed) {
       await Future.delayed(widget.repeatPauseDuration);

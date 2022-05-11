@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:speech_to_text_stream/utils/utils.dart';
 
 class SpeechTextStream {
   final _textStreamController = StreamController<String>();
@@ -51,7 +52,8 @@ class SpeechTextStream {
       if (_textinput.isEmpty || _tempWords.isEmpty) {
         _textStreamController.sink.add(_lastWords);
       } else if (_tempWords.isNotEmpty) {
-        _textStreamController.sink.add("$_tempWords. $_lastWords");
+        _textStreamController.sink
+            .add("$_tempWords. ${_lastWords.capitalize()}");
       }
     }
   }

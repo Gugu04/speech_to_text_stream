@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text_stream/components/avatar_glow.dart';
 import 'package:speech_to_text_stream/utils/speech_text_stream.dart';
+import 'package:speech_to_text_stream/utils/utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -15,24 +18,20 @@ class _HomeScreenState extends State<HomeScreen> {
   final speechToText = SpeechToText();
   var textStream = SpeechTextStream();
 
+// Option - Prevent device orientation changes
   @override
   void initState() {
     super.initState();
-    _initSpeech();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
   }
 
-  void _initSpeech() async {
-    bool _speechEnabled = false;
-    _speechEnabled = await speechToText.initialize();
-    if (!_speechEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          elevation: 2,
-          backgroundColor: Colors.red,
-          content: Text(
-            'Error: Reconocimiento de voz no disponible..',
-            style: TextStyle(fontSize: 18),
-          )));
-    }
+  @override
+  void dispose() {
+    textStream.closeStreamController();
+    super.dispose();
   }
 
   @override
@@ -51,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     size: 40,
                   ),
                   Text(
-                    "\u0020Voz a texto",
+                    "\u0020Voice to text",
                     style: Theme.of(context).textTheme.headline5,
                   ),
                 ],
@@ -65,8 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (_, snapshot) {
                   textinput.text = snapshot.data!;
                   return TextFormField(
-                    // showCursor: speechToText.isNotListening,
-                    // readOnly: !speechToText.isNotListening,
+                    keyboardType: TextInputType.text,
                     controller: textinput,
                     maxLines: 8,
                     minLines: 8,
@@ -108,9 +106,35 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 80,
                 height: 80,
                 child: FloatingActionButton(
-                  onPressed: () => !snapshot.data!
-                      ? textStream.startListening(speechToText, textinput.text)
-                      : textStream.stopListening(speechToText),
+                  onPressed: () async {
+                    Utils.permissionMicrophone();
+                    var microphoneStatus =
+                        await Permission.microphone.isGranted;
+                    if (microphoneStatus) {
+                      if (!speechToText.isAvailable) {
+                        var speechEnabled = await speechToText.initialize(
+                            options: [SpeechToText.androidNoBluetooth]);
+                        if (speechEnabled == false) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              elevation: 2,
+                              backgroundColor: Colors.red,
+                              content: Text(
+                                'Error: Speech Recognition Not Available..',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline6!
+                                    .copyWith(color: Colors.white),
+                              )));
+                        }
+                      }
+                    }
+                    if (speechToText.isAvailable) {
+                      !snapshot.data!
+                          ? textStream.startListening(
+                              speechToText, textinput.text)
+                          : textStream.stopListening(speechToText);
+                    }
+                  },
                   child: Container(
                     width: 80,
                     height: 80,
